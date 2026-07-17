@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.DS_Store
+
+# Generated from the original C++ project's assets via tools/convert-assets.mjs.
+# Contains Konami's copyrighted Castlevania media (sprites, maps, music) —
+# not committed. Run `npm run convert-assets` after cloning to regenerate.
+public/assets/
