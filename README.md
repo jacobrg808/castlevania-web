@@ -26,38 +26,21 @@ use a terminal:
 
 | Platform | File | |
 |---|---|---|
-| macOS | `Castlevania.command` | opens a bare Chrome window (see below) |
+| macOS | `Castlevania.command` | opens the game in a bare Chrome window |
 | Windows | `Castlevania.cmd` | runs `npm run play` |
 | Linux | `Castlevania.sh` | runs `npm run play` |
 
-### Development
+### All commands
 
-```sh
-npm run dev      # http://localhost:5173, hot reload
-```
-
-### A real app icon (macOS only)
-
-On macOS, `npm run setup` additionally builds **`/Applications/Castlevania.app`**
-— a self-contained bundle with a proper icon that opens the game in a bare
-Chrome window (no tabs or address bar), and stops its server when you close the
-window. Rebuild it after code changes with `npm run package-app`. This is a
-convenience only; every platform gets the same game via `npm run play`.
-
-Launch problems are logged to `~/Library/Logs/castlevania-web-launch.log`.
-
-> **Note on distributing the .app:** copying the built app to another Mac does
-> not work out of the box. macOS quarantines downloaded apps and Gatekeeper
-> rejects this one because it is unsigned (`spctl` reports `rejected`), so the
-> recipient would have to right-click → Open, or you would need an Apple
-> Developer ID to sign and notarize it. The app also embeds the converted
-> assets, which should not be redistributed. Have people run `npm run setup`
-> instead.
->
-> For the same reason the app bundles its own copy of the build rather than
-> reading this directory: macOS denies Finder-launched apps access to
-> `~/Documents` and an unsigned app gets no permission prompt — it just fails
-> with `Operation not permitted`.
+| Command | What it does |
+|---|---|
+| `npm run setup` | Once, before anything else: installs dependencies, downloads the original game's assets and converts them. |
+| `npm run play` | Builds if needed, serves the game, opens your browser. |
+| `npm run dev` | Dev server with hot reload, on http://localhost:5173. |
+| `npm run build` | Production build into `dist/`. |
+| `npm run preview` | Serves an existing `dist/` build (Vite's own server). |
+| `npm run convert-assets` | Re-runs just the asset conversion, e.g. after changing the converter. |
+| `npm run package-app` | **macOS only.** Builds `/Applications/Castlevania.app`, a self-contained bundle with an icon that opens the game in a bare Chrome window and stops its server when you close it. Not part of `setup` — it writes to `/Applications`, so it is opt-in. Re-run it after code changes. |
 
 ## Controls
 
