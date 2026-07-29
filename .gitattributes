@@ -1,2 +1,17 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Shell scripts must keep LF even when checked out on Windows, or the shebang
+# breaks under WSL/Git Bash ("bad interpreter: /bin/sh^M").
+*.sh text eol=lf
+*.command text eol=lf
+
+# Batch files are the opposite case: Windows wants CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Never line-ending-normalize binaries.
+*.png binary
+*.ttf binary
+*.wav binary
+*.icns binary

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { Simon, StairTrigger, MoveState } from '../entities/Simon';
 import { Container } from '../entities/Container';
 import { Item } from '../entities/Item';
-import { Enemy, Fireball, GiantBat, type EnemyScene } from '../entities/enemies';
+import { Enemy, Fireball, GiantBat } from '../entities/enemies';
 import { Door } from '../entities/Door';
 import { BreakableBlock } from '../entities/Breakable';
 import {
@@ -13,6 +13,45 @@ import { gameState, resetGameState, MAX_HEALTH } from '../state';
 import { registerAnimations, type AnimDef } from '../util/anims';
 
 const HUD_HEIGHT = 64;
+
+// ---------------------------------------------------------------------------
+// HUD layout, ported from the original's Hud.cpp. It renders at the same
+// 512x448, so its x positions carry over directly; the exceptions below are
+// deliberate. The HUD font (prstartk, 16px) is fixed-width: 16px per glyph
+// advance, with 14px of ink (ascent 14, no descent).
+// ---------------------------------------------------------------------------
+
+// Rows. Hud.cpp uses 15/32/49 in an 83px strip; ours is 64 (448-64 = the 384px
+// map height), so the column shifts up but keeps the same 17px pitch. Three
+// rows of 14px ink at that pitch span 48px — which the subweapon box matches.
+const ROW_1 = 8;
+const ROW_2 = 25;
+const ROW_3 = 42;
+
+// Left column. Hud.cpp butts it against x=0 and puts ENEMY at 2 while PLAYER is
+// at 0; this nudges the column off the edge and drops that 2px inconsistency so
+// the two share an edge. The bars shift with it, preserving Hud.cpp's 9px gap
+// between "PLAYER" and the first HP block — which is also why 8 is the ceiling,
+// since Border.png starts at x=260.
+const HUD_LEFT = 8;
+const BAR_X = HUD_LEFT + 105;
+
+// Subweapon box, drawn at its native size (scaling smeared its 4px border). Its
+// bottom aligns with the ENEMY row's ink, putting its top level with SCORE.
+const BOX_W = 61;
+const BOX_H = 49;
+const BOX_TOP = ROW_3 + 14 - BOX_H;
+
+// Right column. Hud.cpp starts hearts/lives at 339/340 — left of STAGE at 370,
+// which reads as a ragged edge — so they line up under STAGE instead, and the
+// powerup moves out to finish flush with STAGE's right edge.
+const STAGE_X = 370;
+const HUD_RIGHT = STAGE_X + 8 * 16; // "STAGE nn" is 8 glyphs
+
+// Frame order in HP_Block.atlas.xml: player_full, empty, boss_full
+const HP_PLAYER = 0;
+const HP_EMPTY = 1;
+const HP_BOSS = 2;
 const MAPS = ['courtyard', 'greathall', 'underground'] as const;
 type MapKey = (typeof MAPS)[number];
 
@@ -29,6 +68,7 @@ const ATLAS_SPRITES = [
 const IMAGE_SPRITES = [
   'small_heart', 'score_100', 'score_400', 'score_700', 'spark', 'water_splash',
   'debris', 'block', 'block_top', 'block_bottom',
+  'hud_border', 'hud_heart', 'hud_double_shot',
 ];
 const SFX = [
   'Using_Weapon', 'Landing', 'Hitting_Something',
@@ -83,16 +123,21 @@ export class GameplayScene extends Phaser.Scene {
   private levelCompleted = false;
   private projectiles!: Phaser.GameObjects.Group;
   private stopwatchTimer = 0;
+  private hudScore!: Phaser.GameObjects.Text;
+  private hudStage!: Phaser.GameObjects.Text;
+  private hudHearts!: Phaser.GameObjects.Text;
+  private hudLives!: Phaser.GameObjects.Text;
   private hudSubweapon!: Phaser.GameObjects.Image;
-  private hudDoubleShot!: Phaser.GameObjects.Text;
+  private hudDoubleShot!: Phaser.GameObjects.Image;
+  private hudPlayerBlocks: Phaser.GameObjects.Image[] = [];
+  private hudBossBlocks: Phaser.GameObjects.Image[] = [];
+  private doubleShotFlashUntil = 0;
+  private doubleShotWasActive = false;
   private breakables!: Phaser.GameObjects.Group;
   private stageAreas: Phaser.Geom.Rectangle[] = [];
   private waterAreas: Phaser.Geom.Rectangle[] = [];
   private mapHeightPx = 384;
   private doorCutscene: { door: Door; dir: -1 | 1; walkTargetX: number; walking: boolean } | null = null;
-  private hudScore!: Phaser.GameObjects.Text;
-  private hudHearts!: Phaser.GameObjects.Text;
-  private hudBars!: Phaser.GameObjects.Graphics;
 
   constructor() {
     super('gameplay');
@@ -115,6 +160,8 @@ export class GameplayScene extends Phaser.Scene {
     this.levelCompleted = false;
     this.doorCutscene = null;
     this.stageAreas = [];
+    this.doubleShotFlashUntil = 0;
+    this.doubleShotWasActive = false;
   }
 
   dropItem(x: number, y: number, itemId: string): Item {
@@ -143,6 +190,10 @@ export class GameplayScene extends Phaser.Scene {
       this.load.image(key, `sprites/${key}.png`);
     }
     this.load.json('simon.boundaries', 'sprites/simon.boundaries.json');
+    // HP_Block.atlas.xml: three 9x14 frames — player_full, empty, boss_full
+    this.load.spritesheet('hud_hp_block', 'sprites/hud_hp_block.png', {
+      frameWidth: 9, frameHeight: 14,
+    });
     for (const map of MAPS) {
       this.load.json(`map.${map}`, `maps/${map}.json`);
       this.load.image(`bg.${map}`, `maps/${map}.png`);
@@ -590,50 +641,99 @@ export class GameplayScene extends Phaser.Scene {
 
   private createHud(): void {
     const style: Phaser.Types.GameObjects.Text.TextStyle = {
-      fontFamily: 'monospace',
+      fontFamily: 'prstartk, monospace',
       fontSize: '16px',
       color: '#ffffff',
     };
     // scrollFactor 0 => screen space; y=0 is the top of the HUD strip
     this.add.rectangle(0, 0, 512, HUD_HEIGHT, 0x000000)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(100);
-    this.hudScore = this.add.text(16, 4, '', style).setScrollFactor(0).setDepth(101);
-    this.hudHearts = this.add.text(320, 4, '', { ...style, color: '#ff4444' })
-      .setScrollFactor(0).setDepth(101);
-    this.add.text(400, 4, 'STAGE 01', style).setScrollFactor(0).setDepth(101);
-    this.add.text(16, 24, 'PLAYER', style).setScrollFactor(0).setDepth(101);
-    this.add.text(16, 42, 'ENEMY', style).setScrollFactor(0).setDepth(101);
-    this.hudBars = this.add.graphics().setScrollFactor(0).setDepth(101);
-    // equipped subweapon box, NES-style
-    this.add.rectangle(228, 26, 44, 34).setStrokeStyle(1, 0xffffff)
+    this.hudScore = this.add.text(HUD_LEFT, ROW_1, '', style).setScrollFactor(0).setDepth(101);
+    this.hudStage = this.add.text(STAGE_X, ROW_1, '', style).setScrollFactor(0).setDepth(101);
+    this.add.text(HUD_LEFT, ROW_2, 'PLAYER', style).setScrollFactor(0).setDepth(101);
+    this.add.text(HUD_LEFT, ROW_3, 'ENEMY', style).setScrollFactor(0).setDepth(101);
+
+    // Equipped-subweapon box (Hud/Border.png), drawn 1:1 at its native 61x49.
+    this.add.image(260, BOX_TOP, 'hud_border')
       .setOrigin(0, 0).setScrollFactor(0).setDepth(101);
-    this.hudSubweapon = this.add.image(250, 43, 'dagger')
+    this.hudSubweapon = this.add.image(260 + BOX_W / 2, BOX_TOP + BOX_H / 2, 'dagger')
       .setScrollFactor(0).setDepth(102).setVisible(false);
-    this.hudDoubleShot = this.add.text(276, 28, 'II', {
-      fontFamily: 'monospace', fontSize: '14px', color: '#ffffff',
-    }).setScrollFactor(0).setDepth(102).setVisible(false);
+
+    // Hearts sit on the PLAYER row, lives on the ENEMY row — the count is drawn
+    // as "-nn" next to a heart sprite, not as a text glyph. Both start at
+    // STAGE_X, and the heart sprite is 16px wide, so "-nn" clears it exactly.
+    this.add.image(STAGE_X, ROW_2, 'hud_heart')
+      .setOrigin(0, 0).setScrollFactor(0).setDepth(101);
+    this.hudHearts = this.add.text(STAGE_X + 16, ROW_2, '', style).setScrollFactor(0).setDepth(101);
+    this.hudLives = this.add.text(STAGE_X, ROW_3, '', style).setScrollFactor(0).setDepth(101);
+
+    // Right edge flush with STAGE's; vertically 1px above the ENEMY row's top,
+    // the same relationship Hud.cpp uses (powerup y=48 vs ENEMY row 49).
+    this.hudDoubleShot = this.add.image(HUD_RIGHT - 14, ROW_3 - 1, 'hud_double_shot')
+      .setScrollFactor(0).setDepth(102).setVisible(false);
+
+    // Health bars: 16 HP_Block frames per row at a 9px stride, as in
+    // Hud::DrawHealthBars. Created once, then re-framed on every refresh.
+    // Phaser reuses the scene instance across restarts (map transitions, deaths),
+    // so these must start empty — otherwise createHud appends a second set and
+    // refreshHud keeps re-framing the first, destroyed one, leaving the bars blank.
+    this.hudPlayerBlocks = [];
+    this.hudBossBlocks = [];
+    for (let i = 0; i < MAX_HEALTH; i++) {
+      const x = BAR_X + i * 9;
+      this.hudPlayerBlocks.push(this.add.image(x, ROW_2 + 1, 'hud_hp_block', HP_EMPTY)
+        .setOrigin(0, 0).setScrollFactor(0).setDepth(101));
+      this.hudBossBlocks.push(this.add.image(x, ROW_3, 'hud_hp_block', HP_EMPTY)
+        .setOrigin(0, 0).setScrollFactor(0).setDepth(101));
+    }
+
     this.refreshHud();
   }
 
   private refreshHud(): void {
+    // All four counters are zero-padded exactly as Hud.cpp's PadZero does.
     this.hudScore.setText(`SCORE-${String(gameState.score).padStart(6, '0')}`);
-    this.hudHearts.setText(`♥${String(gameState.hearts).padStart(2, '0')}  P-${gameState.lives}`);
+    this.hudStage.setText(`STAGE ${String(gameState.stage).padStart(2, '0')}`);
+    this.hudHearts.setText(`-${String(gameState.hearts).padStart(2, '0')}`);
+    this.hudLives.setText(`P-${String(gameState.lives).padStart(2, '0')}`);
 
     const weapon = gameState.subweapon;
     this.hudSubweapon.setVisible(!!weapon);
     if (weapon) this.hudSubweapon.setTexture(weapon); // texture keys match subweapon names
-    this.hudDoubleShot.setVisible(!!weapon && gameState.powerup === 'double_shot');
 
-    // NES-style 16-unit health bars; ENEMY bar tracks the boss when present
+    this.updateDoubleShotIndicator();
+
+    // 16-unit health bars; the ENEMY row tracks the boss when one is present
     const bossHealth = this.boss ? (this.boss.alive ? this.boss.health : 0) : MAX_HEALTH;
-    this.hudBars.clear();
     for (let i = 0; i < MAX_HEALTH; i++) {
-      const x = 90 + i * 6;
-      this.hudBars.fillStyle(i < gameState.health ? 0xf83800 : 0x333333);
-      this.hudBars.fillRect(x, 25, 4, 12);
-      this.hudBars.fillStyle(i < bossHealth ? 0xfca044 : 0x333333);
-      this.hudBars.fillRect(x, 43, 4, 12);
+      this.hudPlayerBlocks[i].setFrame(i < gameState.health ? HP_PLAYER : HP_EMPTY);
+      this.hudBossBlocks[i].setFrame(i < bossHealth ? HP_BOSS : HP_EMPTY);
     }
+  }
+
+  /**
+   * Double_Shot.png flashes for 2.5s when first picked up (Hud::DrawPowerup),
+   * toggling every 60ms, then stays solid.
+   */
+  private updateDoubleShotIndicator(): void {
+    // Shown whenever the DoubleShot powerup is held, with or without a subweapon
+    // equipped — matching Hud::GetPowerupTexture, which keys off the powerup
+    // alone. Cleared on death by resetGameState.
+    const active = gameState.powerup === 'double_shot';
+    if (!active) {
+      this.hudDoubleShot.setVisible(false);
+      this.doubleShotFlashUntil = 0;
+      this.doubleShotWasActive = false;
+      return;
+    }
+    if (!this.doubleShotWasActive) {
+      this.doubleShotFlashUntil = this.time.now + 2500;
+      this.doubleShotWasActive = true;
+    }
+    // refreshHud runs every frame, so the flash has to be decided here — doing
+    // it in update() got overwritten by this method later in the same frame.
+    const flashing = this.time.now < this.doubleShotFlashUntil;
+    this.hudDoubleShot.setVisible(!flashing || Math.floor(this.time.now / 60) % 2 === 0);
   }
 
   private playMusic(): void {

@@ -4,5 +4,14 @@ dist/
 
 # Generated from the original C++ project's assets via tools/convert-assets.mjs.
 # Contains Konami's copyrighted Castlevania media (sprites, maps, music) —
-# not committed. Run `npm run convert-assets` after cloning to regenerate.
+# not committed. Run `npm run setup` after cloning to regenerate.
 public/assets/
+
+
+# Downloaded copy of the original C++ project, fetched by npm run setup.
+.cache/
+
+# Castlevania emblem used for the macOS app icon. Konami artwork, so it is
+# generated/kept locally rather than committed; package-app.sh falls back to
+# cropping the title screen when it is absent.
+tools/icon.png

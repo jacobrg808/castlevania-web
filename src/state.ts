@@ -4,6 +4,8 @@ export interface GameState {
   hearts: number;
   health: number;
   lives: number;
+  /** Shown in the HUD as "STAGE nn"; Block 1 is all stage 1 */
+  stage: number;
   whipLevel: number;
   subweapon: string | null;
   /** 'double_shot' allows two subweapon throws per cooldown */
@@ -18,6 +20,7 @@ export const gameState: GameState = {
   hearts: 5,
   health: MAX_HEALTH,
   lives: 3,
+  stage: 1,
   whipLevel: 1,
   subweapon: null,
   powerup: null,
@@ -29,6 +32,7 @@ export function resetGameState(keepScore = false): void {
     hearts: 5,
     health: MAX_HEALTH,
     lives: 3,
+    stage: 1,
     whipLevel: 1,
     subweapon: null,
     powerup: null,

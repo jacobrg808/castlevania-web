@@ -4,16 +4,25 @@
 // Usage: node tools/convert-assets.mjs [path-to-Castlevania-master]
 
 import { XMLParser } from 'fast-xml-parser';
-import { readFileSync, writeFileSync, copyFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, copyFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+// Defaults to the copy `npm run setup` downloads into .cache/.
 const SRC = join(
-  process.argv[2] ?? '.cache/Castlevania-master',
+  process.argv[2] ?? join(ROOT, '.cache/Castlevania-master'),
   'src/GameCuaTao/Castlevania/Content'
 );
 const OUT = join(ROOT, 'public/assets');
+
+if (!existsSync(SRC)) {
+  console.error(`error: could not find the original game's Content folder at:\n  ${SRC}\n`);
+  console.error('Run `npm run setup` to download it automatically, or pass the path to');
+  console.error('your own checkout of https://github.com/NearHuscarl/Castlevania:\n');
+  console.error('  node tools/convert-assets.mjs /path/to/Castlevania-master');
+  process.exit(1);
+}
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -197,11 +206,22 @@ const plainImages = [
   { name: 'score_100', path: 'Effects/100.png' },
   { name: 'score_400', path: 'Effects/400.png' },
   { name: 'score_700', path: 'Effects/700.png' },
+  // HUD chrome, drawn by Hud::Draw in the original
+  { name: 'hud_border', path: 'Hud/Border.png' },
+  { name: 'hud_heart', path: 'Hud/Heart.png' },
+  { name: 'hud_double_shot', path: 'Hud/Double_Shot.png' },
+  { name: 'hud_hp_block', path: 'Hud/HP_Block.png' },
 ];
 for (const { name, path } of plainImages) {
   copyFileSync(join(SRC, path), join(OUT, 'sprites', `${name}.png`));
 }
 console.log(`copied ${plainImages.length} plain images`);
+
+// The HUD font. MainFont.font.xml just names a TrueType file and a size, so the
+// .ttf is copied straight through and @font-face'd in index.html.
+mkdirSync(join(OUT, 'fonts'), { recursive: true });
+copyFileSync(join(SRC, 'Fonts/prstartk.ttf'), join(OUT, 'fonts/prstartk.ttf'));
+console.log('copied HUD font (prstartk.ttf)');
 
 const maps = [
   { name: 'courtyard', base: 'Courtyard' },
