@@ -2,6 +2,12 @@ import Phaser from 'phaser';
 import { MenuScene } from './scenes/MenuScene';
 import { GameplayScene } from './scenes/GameplayScene';
 
+// Phaser rasterises text straight to canvas, so the HUD font has to be resident
+// before the first frame or the text silently falls back to monospace.
+await document.fonts.load('16px prstartk').catch(() => {
+  console.warn('HUD font failed to load; falling back to monospace');
+});
+
 // Original game renders at 512x448 (2x NES resolution).
 // Top 64px is reserved for the HUD, the 512x384 below is the playfield.
 const game = new Phaser.Game({
