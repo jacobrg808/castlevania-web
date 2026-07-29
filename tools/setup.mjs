@@ -7,8 +7,8 @@
 // each user generates their own copy from the original C++ project, which does
 // publish them.
 //
-// On macOS this also builds the double-clickable Castlevania.app. Elsewhere it
-// points you at `npm run play`.
+// This deliberately does not build the macOS Castlevania.app — it would write to
+// /Applications unasked. Run `npm run package-app` to opt into that.
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -65,12 +65,5 @@ if (!existsSync(join(ROOT, 'public', 'assets'))) {
   console.log('==> Assets already present, skipping download');
 }
 
-if (process.platform === 'darwin') {
-  console.log('==> Building Castlevania.app');
-  run('bash', [join('tools', 'package-app.sh')], 'app packaging');
-  console.log('\nSetup complete. Castlevania is in your Applications folder —');
-  console.log('double-click it, or drag it to your Dock.\n');
-} else {
-  console.log('\nSetup complete. Start the game with:\n');
-  console.log('  npm run play\n');
-}
+console.log('\nSetup complete. Start the game with:\n');
+console.log('  npm run play\n');
