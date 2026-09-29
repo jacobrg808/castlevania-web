@@ -5,10 +5,6 @@ A fan recreation of Castlevania (NES, 1987), built on
 C++/DirectX 9 remake of the game's first block — and rebuilt for the browser
 with Phaser 3 + TypeScript.
 
-The gameplay logic, physics constants, AI behaviour and asset formats all come
-from NearHuscarl's remake. That reverse-engineering work is theirs; this project
-is a port of it to the web, and takes no credit for it.
-
 ## Play
 
 **▶ [Play in your browser](https://jacobrg808.github.io/castlevania-web/)** —
@@ -82,47 +78,3 @@ ported from the original C++ source so the game feel matches.
 
 Only the code and the conversion tooling live in this repo; the sprites, maps
 and music are generated from NearHuscarl's project at setup time.
-
-## Status
-
-- [x] Courtyard map, camera, HUD strip
-- [x] Simon: walk / jump / duck / whip (with hover-gravity jump arc, hard landing)
-- [x] Whippable braziers & candles: flame death effect, item drops (hearts,
-      money bags + floating score, whip powerups with flash + level 2/3 whip,
-      subweapon items stored in state)
-- [x] All three Stage 1 maps (Courtyard, Great Hall, Underground) with
-      transitions: castle door, stairs below floor / above ceiling
-- [x] Stairs: mount from idle with ↑/↓ on a stair trigger, half-speed diagonal
-      climb, idle/attack on stairs, junction exits
-- [x] Score / hearts / lives wired into the HUD; state persists across maps
-- [x] Enemies with original stats & AI: zombies (walk in from screen edges,
-      groups of 3), panthers (pounce when Simon nears, leap off ledges),
-      fishmen (launch through one-way platforms, walk, shoot fireballs),
-      vampire bats (sine-wave flight at Simon's height)
-- [x] Spawn areas & spawn points from the TMX, activated by player presence
-- [x] Damage: knockback bounce, 2s i-frame flicker, NES-style health bars,
-      death → respawn (lives), game-over screen with full reset
-- [x] Enemy kills: spark on hit, flame on death, exp score, 20% random drops
-- [x] Giant Bat boss fight: arena camera lock + sealed exit, 2s wake-up, boss
-      music, parabolic dive-bombing with distance-scaled speed, threat-zone
-      dives, aimed fireballs, boss health on the ENEMY bar, crystal ball drop
-      → full heal → hearts-to-score tally → STAGE CLEAR
-- [x] Subweapons (↑ + attack, 1 heart per throw, 1s cooldown, HUD icon box):
-      dagger (fast, straight), axe (heavy spinning arc, pierces), holy water
-      (shatters into a burning flame), stopwatch (5 hearts, freezes enemies 3s)
-- [x] Mid-air whip attacks and subweapon throws (jump attack)
-- [x] Doors between Great Hall sections: five-phase cutscene (pan, open, walk
-      through, close, pan), sealed permanently behind Simon, per-StageArea
-      camera bounds
-- [x] Breakable blocks & walls: whip crumbles them with debris (walls break
-      bottom-first, hiding the pork chop), solid until broken
-- [x] DoubleShot powerup: two subweapon throws per cooldown, "II" HUD marker
-- [x] Title screen: Main_Menu background, animated bat, PUSH START KEY,
-      prologue jingle; game over and stage clear return to the title
-- [x] Arrival-by-stairs: map transitions taken on a stairway spawn Simon still
-      climbing (controls locked) until the stairs land him on the floor
-- [x] Water pits: falling into the Underground water splashes and kills Simon
-      instantly (plus a below-the-world catch-all so no map can soft-lock)
-- [x] Level-3 whip flashes a random different color every frame
-
-**The port is feature-complete against the original Block 1 remake.**
