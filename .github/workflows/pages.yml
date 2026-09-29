@@ -42,7 +42,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      # enablement lets this workflow switch Pages to the "GitHub Actions"
+      # build type itself, using the pages: write permission above. Without it
+      # the step fails until that source is selected by hand in Settings.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
