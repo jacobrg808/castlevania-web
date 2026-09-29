@@ -1,21 +1,30 @@
 # Castlevania Web
 
-A web port of [NearHuscarl/Castlevania](https://github.com/NearHuscarl/Castlevania)
-(a C++/DirectX 9 remake of Castlevania NES Block 1), rebuilt with Phaser 3 + TypeScript.
+A fan recreation of Castlevania (NES, 1987), built on
+[NearHuscarl/Castlevania](https://github.com/NearHuscarl/Castlevania) — a
+C++/DirectX 9 remake of the game's first block — and rebuilt for the browser
+with Phaser 3 + TypeScript.
+
+The gameplay logic, physics constants, AI behaviour and asset formats all come
+from NearHuscarl's remake. That reverse-engineering work is theirs; this project
+is a port of it to the web, and takes no credit for it.
 
 ## Play
 
-[Node.js](https://nodejs.org) 18 or newer is the only requirement. Works on
-macOS, Windows and Linux.
+**▶ [Play in your browser](https://jacobrg808.github.io/castlevania-web/)** —
+needs a keyboard, so it will not work on a phone yet.
+
+To run it locally instead, [Node.js](https://nodejs.org) 18 or newer is the only
+requirement. Works on macOS, Windows and Linux.
 
 ```sh
 npm run setup    # once: installs deps, downloads and converts the game's assets
 npm run play     # builds if needed, serves the game, opens your browser
 ```
 
-`npm run setup` is the whole install. Assets are downloaded rather than shipped
-because they are Konami's — see [Assets](#assets). Everything is cached, so
-re-running it is cheap.
+`npm run setup` is the whole install. The game's assets are not committed — they
+are downloaded from the original project and converted on the fly, see
+[Assets](#assets). Everything is cached, so re-running it is cheap.
 
 Node stays a requirement at play time because Phaser fetches its ~100
 atlas/map/audio files over HTTP, and `file://` blocks that — so the game is
@@ -71,11 +80,8 @@ Physics constants (walk speed 125 px/s, jump velocity 470 px/s, gravity
 23 px/frame with 1/6-gravity hover band, hard-landing threshold 80 px) are
 ported from the original C++ source so the game feel matches.
 
-> Sprites, maps and music are Konami's Castlevania assets, taken from the fan
-> remake above. They are deliberately excluded from this repo (see
-> `.gitignore`) — only the code and the conversion tooling are published here.
-> Regenerate them locally for personal/educational use; do not redistribute
-> the generated `public/assets/` folder itself.
+Only the code and the conversion tooling live in this repo; the sprites, maps
+and music are generated from NearHuscarl's project at setup time.
 
 ## Status
 

@@ -3,9 +3,8 @@
 //
 //   npm run setup
 //
-// Assets are not committed to this repo (they are Konami's — see README), so
-// each user generates their own copy from the original C++ project, which does
-// publish them.
+// The game's assets are not committed to this repo, so each user generates
+// their own copy from the original C++ project, which does publish them.
 //
 // This deliberately does not build the macOS Castlevania.app — it would write to
 // /Applications unasked. Run `npm run package-app` to opt into that.
