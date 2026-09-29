@@ -22,19 +22,6 @@ npm run play     # builds if needed, serves the game, opens your browser
 are downloaded from the original project and converted on the fly, see
 [Assets](#assets). Everything is cached, so re-running it is cheap.
 
-Node stays a requirement at play time because Phaser fetches its ~100
-atlas/map/audio files over HTTP, and `file://` blocks that — so the game is
-served from a tiny local static server rather than opened as a file.
-
-There is also a double-click entry point per platform, if you would rather not
-use a terminal:
-
-| Platform | File | |
-|---|---|---|
-| macOS | `Castlevania.command` | opens the game in a bare Chrome window |
-| Windows | `Castlevania.cmd` | runs `npm run play` |
-| Linux | `Castlevania.sh` | runs `npm run play` |
-
 ### All commands
 
 | Command | What it does |

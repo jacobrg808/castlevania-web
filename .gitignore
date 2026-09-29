@@ -16,5 +16,5 @@ public/assets/
 # absent.
 tools/icon.png
 
-# Claude Code session config — local tooling, not part of the project.
+# Local tooling/editor config, not part of the project.
 .claude/

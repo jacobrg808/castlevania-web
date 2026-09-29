@@ -10,8 +10,7 @@
 # macOS (TCC) denies Finder-launched apps access to ~/Documents until the user
 # grants it, and an unsigned app gets no prompt — it just fails.
 #
-# Re-run this after code changes to refresh the app. To play the live source
-# instead, double-click Castlevania.command in the project root.
+# Re-run this after code changes to refresh the app.
 
 set -euo pipefail
 

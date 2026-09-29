@@ -1,9 +1,10 @@
 #!/bin/bash
-# macOS-only launcher, used by Castlevania.app and Castlevania.command. Every
-# platform's portable equivalent is `npm run play` (tools/play.mjs).
+# macOS-only launcher behind Castlevania.app. The portable equivalent, on any
+# platform, is `npm run play` (tools/play.mjs).
 #
-# It serves the production build on localhost and opens it in a bare Chrome window (no tabs or address bar) so it behaves like a
-# standalone game. Closing the window shuts the server down.
+# It serves the production build on localhost and opens it in a bare Chrome
+# window (no tabs or address bar) so it behaves like a standalone game. Closing
+# the window shuts the server down.
 #
 # Runs in two modes:
 #
@@ -12,9 +13,8 @@
 #     reads the project directory, because macOS denies Finder-launched apps
 #     access to ~/Documents until the user grants it explicitly.
 #
-#   Dev (GAME_ROOT unset) — Castlevania.command in the project root builds
-#     dist/ if it is stale, then serves that. Terminal already has file access,
-#     so this mode always plays the current source.
+#   Dev (GAME_ROOT unset) — run directly from the project to build dist/ if it
+#     is stale and serve that, always playing the current source.
 
 set -uo pipefail
 
